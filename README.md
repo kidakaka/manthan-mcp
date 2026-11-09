@@ -112,30 +112,45 @@ governance:
 
 ---
 
-## 🚀 Quickstart
+## 🚀 Quickstart & Frictionless Setup
+
+> 💡 **Zero Background Daemons Needed!**  
+> Unlike traditional servers, you **never** need to keep a terminal open running `manthan serve`. Your LLM client (Cursor, Claude Desktop, VS Code) launches Manthan automatically in the background as an isolated sidecar process over stdio.
 
 ### 1. Initialize Manthan in your repository
 ```bash
 npx @manthan/mcp-server init
 ```
 This automatically:
-- Creates `.manthan.yaml` with default settings.
+- Creates `.manthan.yaml` with declarative settings.
 - Creates directory structures for `working` and `constitution` memories.
 - Adds `.manthan/index.db*` to `.gitignore`.
 - Initializes Git (if not already initialized).
 - Seeds initial constitutional rules (`ADR-001`) and working memories.
 - Builds the local SQLite FTS5 search index.
+- **Auto-configures Cursor & VS Code:** Generates `.cursor/mcp.json` and `.vscode/mcp.json` in your repository so you can start immediately with zero manual configuration!
 
-### 2. Inspect status
+### 2. Auto-Link to Claude Desktop (1-Click)
+To automatically connect Claude Desktop without touching JSON files or hunting down OS appdata paths:
+
+```bash
+npx @manthan/mcp-server link claude
+```
+
+*(You can also run `npx @manthan/mcp-server link all` to configure all detected LLM clients at once).*
+
+### 3. Inspect Status
 ```bash
 npx @manthan/mcp-server status
 ```
 
 ---
 
-## 🔌 Client Integration
+## 🔌 Manual Client Integration (Optional)
 
-### 1. Claude Desktop & Claude Code
+If you prefer to configure your client manually, add the following to your client's settings:
+
+### 1. Claude Desktop
 Add to your `claude_desktop_config.json`:
 
 ```json
@@ -149,20 +164,8 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-Or for local development:
-```json
-{
-  "mcpServers": {
-    "manthan": {
-      "command": "node",
-      "args": ["<your-path>/manthan-mcp/dist/index.js", "serve"]
-    }
-  }
-}
-```
-
 ### 2. Cursor
-In `.cursor/mcp.json` (or Cursor Settings > Features > MCP):
+In `.cursor/mcp.json` *(already generated automatically by `manthan init`)*:
 
 ```json
 {
@@ -175,7 +178,21 @@ In `.cursor/mcp.json` (or Cursor Settings > Features > MCP):
 }
 ```
 
-### 3. Google Antigravity
+### 3. VS Code / Copilot / Cline
+In `.vscode/mcp.json` *(already generated automatically by `manthan init`)*:
+
+```json
+{
+  "mcpServers": {
+    "manthan": {
+      "command": "npx",
+      "args": ["-y", "@manthan/mcp-server", "serve"]
+    }
+  }
+}
+```
+
+### 4. Google Antigravity
 Add to your Antigravity MCP configuration (`~/.gemini/antigravity/mcp/manthan.json` or `config.json`):
 
 ```json
@@ -190,8 +207,9 @@ Add to your Antigravity MCP configuration (`~/.gemini/antigravity/mcp/manthan.js
 
 ## 💻 CLI Commands Reference
 
-- `manthan init [--dir <path>]`: Initialize memory storage and seed artifacts.
-- `manthan serve [--dir <path>]`: Start the MCP server over stdio.
+- `manthan init [--dir <path>] [-c <client>]`: Initialize memory storage, seed artifacts, and generate client configs.
+- `manthan link [claude|cursor|vscode|all]`: Automatically link the MCP server into your LLM client configuration.
+- `manthan serve [--dir <path>]`: Start the MCP server over stdio (called automatically by LLM clients).
 - `manthan status [--dir <path>]`: View memory counts, Git HEAD, and index health.
 - `manthan reindex [--dir <path>]`: Force a complete rebuild of the SQLite FTS5 index.
 

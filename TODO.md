@@ -38,6 +38,10 @@ npx @manthan/mcp-server serve
 ## 🌟 Early Adopter & Community Roadmap
 
 ### Phase 1: Real-World Battle-Testing (Current)
+- [x] **Frictionless Onboarding & Client Auto-Link:**
+  - Auto-generate `.cursor/mcp.json` and `.vscode/mcp.json` during `manthan init` for zero-configuration project startup.
+  - Implement `manthan link [claude|cursor|vscode|all]` for 1-click configuration without touching JSON files.
+  - Display interactive onboarding card explaining that stdio MCP servers require no running terminal daemon.
 - [ ] **Collect Feedback on Memory Friction:**
   - Monitor GitHub Discussions & Issues for edge cases in agent supersession and long-session state drift.
   - Document prompt patterns that guide LLMs to write high-density, searchable frontmatter tags.

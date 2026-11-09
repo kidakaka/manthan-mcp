@@ -84,5 +84,13 @@ export async function startStdioServer(workspaceRoot: string = process.cwd()): P
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.error(`[Manthan MCP Server] running on stdio for workspace: ${config.workspace_root}`);
+  if (process.stdin.isTTY) {
+    console.error(`\n💡 Tip: "manthan serve" is an MCP stdio server meant to be launched by an LLM client (Claude, Cursor, etc.).`);
+    console.error(`   You don't need to keep this terminal running! To auto-connect your client, run:`);
+    console.error(`     manthan link claude   (or: npx @manthan/mcp-server link claude)`);
+    console.error(`     manthan link cursor   (or: npx @manthan/mcp-server link cursor)\n`);
+    console.error(`   Waiting for JSON-RPC messages on stdin... (Press Ctrl+C to stop)\n`);
+  } else {
+    console.error(`[Manthan MCP Server] running on stdio for workspace: ${config.workspace_root}`);
+  }
 }

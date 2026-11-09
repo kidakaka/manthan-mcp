@@ -5,12 +5,99 @@
 import { Command } from 'commander';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as yaml from 'yaml';
 import { loadConfig, DEFAULT_CONFIG } from './config/schema.js';
 import { GitEngine } from './storage/git-engine.js';
 import { MarkdownStore } from './storage/markdown-store.js';
 import { SqliteIndexer } from './storage/sqlite-indexer.js';
 import { startStdioServer } from './server.js';
+import {
+  linkClaudeDesktop,
+  linkCursor,
+  linkVSCode,
+  linkAllClients,
+  LinkResult,
+  getClaudeDesktopConfigPath,
+} from './config/client-linker.js';
+
+const __filename = fileURLToPath(import.meta.url);
+
+function printOnboardingBanner(
+  workspaceRoot: string,
+  initialSha: string | null,
+  memoryCount: number,
+  clientResults: LinkResult[]
+): void {
+  const line = '═'.repeat(66);
+  const thinLine = '─'.repeat(66);
+
+  console.log(`
+┌${'─'.repeat(66)}┐
+│                                                                  │
+│   🏛️   M A N T H A N  —  Deterministic Agent Memory Engine         │
+│   "Memory-as-Code" via Model Context Protocol (MCP)              │
+│                                                                  │
+└${'─'.repeat(66)}┘
+
+📁 Workspace:       ${workspaceRoot}
+🌿 Git Repository:  ${initialSha ? `Connected (commit ${initialSha.substring(0, 7)})` : 'Connected'}
+🧠 Active Memory:   .manthan/memory/working/
+🛡️  Constitution:    .manthan/memory/constitution/
+⚡ Sidecar Index:   .manthan/index.db (SQLite FTS5 BM25)
+📊 Seed Artifacts:  ${memoryCount} initial memories indexed
+
+${line}
+💡 HOW MCP WORKS (Zero Terminal Daemons Needed!)
+${line}
+You DO NOT need to run "manthan serve" in a background terminal.
+Your LLM client (Claude, Cursor, etc.) launches Manthan automatically
+as an isolated background sidecar process over stdio.
+
+${thinLine}
+🔌 INSTANT CLIENT CONNECTIONS
+${thinLine}`);
+
+  if (clientResults.length > 0) {
+    for (const res of clientResults) {
+      if (res.status === 'created' || res.status === 'updated') {
+        const displayPath = path.isAbsolute(res.configPath)
+          ? path.relative(workspaceRoot, res.configPath) || res.configPath
+          : res.configPath;
+        console.log(`  ✅ ${res.client.padEnd(16)} -> ${displayPath}`);
+      } else if (res.status === 'error') {
+        console.log(`  ⚠️  ${res.client.padEnd(16)} ${res.message}`);
+      }
+    }
+  }
+
+  const sampleConfig = JSON.stringify(
+    {
+      mcpServers: {
+        manthan: {
+          command: 'npx',
+          args: ['-y', '@manthan/mcp-server', 'serve', '--dir', workspaceRoot],
+        },
+      },
+    },
+    null,
+    2
+  );
+
+  console.log(`
+  To link Claude Desktop automatically, run:
+    npx @manthan/mcp-server link claude
+    (or: manthan link claude)
+
+  Or paste into your Claude Desktop config (${getClaudeDesktopConfigPath()}):
+${sampleConfig
+  .split('\n')
+  .map((l) => '  ' + l)
+  .join('\n')}
+
+🎉 All set! Open your project in Cursor, VS Code, or Claude to start.
+`);
+}
 
 const program = new Command();
 
@@ -26,6 +113,9 @@ program
   .command('init')
   .description('Initialize Manthan memory store, configuration, and sample seed artifacts in a workspace')
   .option('-d, --dir <path>', 'Workspace directory path', process.cwd())
+  .option('-c, --client <client>', 'Auto-link to specific LLM client (claude, cursor, vscode, all)')
+  .option('--no-client-configs', 'Skip generating workspace-level client configs (.cursor, .vscode)')
+  .option('--local', 'Configure clients using local development node script instead of npx')
   .action(async (options) => {
     const workspaceRoot = path.resolve(options.dir);
     console.log(`\n⚡ Initializing Manthan memory store in: ${workspaceRoot}\n`);
@@ -151,7 +241,74 @@ Agents can now commit state, recall context with BM25 ranking, and propose const
     indexer.setMetadata('last_indexed_at', new Date().toISOString());
     console.log(`✅ Indexed ${memories.length} memory artifacts in SQLite FTS5 (${config.storage.index_db_path})`);
 
-    console.log(`\n🎉 Manthan is ready! Run "manthan serve" to launch the MCP server.\n`);
+    const clientResults: LinkResult[] = [];
+    const linkerOpts = {
+      useNpx: !options.local,
+      customScriptPath: options.local ? __filename : undefined,
+    };
+
+    if (options.clientConfigs !== false) {
+      clientResults.push(linkCursor(workspaceRoot, linkerOpts));
+      clientResults.push(linkVSCode(workspaceRoot, linkerOpts));
+    }
+
+    if (options.client) {
+      const target = String(options.client).toLowerCase();
+      if (target === 'claude') {
+        clientResults.push(linkClaudeDesktop(workspaceRoot, linkerOpts));
+      } else if (target === 'cursor' && options.clientConfigs === false) {
+        clientResults.push(linkCursor(workspaceRoot, linkerOpts));
+      } else if (target === 'vscode' && options.clientConfigs === false) {
+        clientResults.push(linkVSCode(workspaceRoot, linkerOpts));
+      } else if (target === 'all') {
+        clientResults.push(linkClaudeDesktop(workspaceRoot, linkerOpts));
+      }
+    }
+
+    printOnboardingBanner(workspaceRoot, initialSha, memories.length, clientResults);
+  });
+
+// ==========================================
+// Command: manthan link [client]
+// ==========================================
+program
+  .command('link [client]')
+  .description('Automatically link Manthan MCP server into LLM client configuration (claude, cursor, vscode, all)')
+  .option('-d, --dir <path>', 'Workspace directory path', process.cwd())
+  .option('--local', 'Use local development node script instead of npx')
+  .action((client = 'all', options) => {
+    const workspaceRoot = path.resolve(options.dir);
+    const linkerOpts = {
+      useNpx: !options.local,
+      customScriptPath: options.local ? __filename : undefined,
+    };
+    const target = client.toLowerCase();
+
+    console.log(`\n🔗 Linking Manthan MCP server for workspace: ${workspaceRoot}\n`);
+
+    let results: LinkResult[] = [];
+    if (target === 'claude') {
+      results = [linkClaudeDesktop(workspaceRoot, linkerOpts)];
+    } else if (target === 'cursor') {
+      results = [linkCursor(workspaceRoot, linkerOpts)];
+    } else if (target === 'vscode') {
+      results = [linkVSCode(workspaceRoot, linkerOpts)];
+    } else if (target === 'all') {
+      results = linkAllClients(workspaceRoot, linkerOpts);
+    } else {
+      console.error(`❌ Unknown client: "${client}". Choose from: claude, cursor, vscode, all`);
+      process.exit(1);
+    }
+
+    for (const res of results) {
+      if (res.status === 'created' || res.status === 'updated') {
+        console.log(`✅ ${res.client}: ${res.message}`);
+      } else if (res.status === 'error') {
+        console.error(`❌ ${res.client}: ${res.message}`);
+      }
+    }
+
+    console.log(`\n👉 Restart your LLM client (if open) to activate Manthan memory!\n`);
   });
 
 // ==========================================

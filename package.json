@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run build",
     "start": "node dist/index.js serve",
     "manthan": "tsx src/index.ts",
-    "test": "node --import tsx --test tests/e2e-memory-flow.test.ts"
+    "test": "node --import tsx --test tests/e2e-memory-flow.test.ts tests/client-linker.test.ts"
   },
   "keywords": [
     "mcp",
