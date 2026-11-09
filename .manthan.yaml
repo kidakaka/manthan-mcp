@@ -1,0 +1,14 @@
+version: "1.0"
+project: default-workspace
+storage:
+  root_dir: .manthan/memory
+  working_dir: .manthan/memory/working
+  constitution_dir: .manthan/memory/constitution
+  index_db_path: .manthan/index.db
+git:
+  auto_commit: true
+  branch_strategy: direct
+  commit_prefix: "chore(manthan):"
+governance:
+  prioritize_constitution_on_recall: true
+  allow_direct_constitution_writes: false
