@@ -22,6 +22,29 @@ Unlike probabilistic vector-only memory layers that suffer from black-box semant
 
 ---
 
+## 🌊 The Origin & Etymology of "Manthan" (मंथन)
+
+> *"Out of the turbulent ocean of chaotic noise, deep contemplation churns the immortal nectar of truth."*
+
+**Manthan** (मन्थन) is an ancient Sanskrit word originating from the root ***manth*** (मन्थ्), which translates to **"to churn, vigorously agitate, deeply contemplate, and extract the concentrated essence from vast substance."**
+
+In Indian philosophy and classical Vedic epics (such as the *Mahabharata* and *Bhagavata Purana*), the term finds its definitive mythic expression in **Samudra Manthan** (समुद्र मन्थन — *The Churning of the Cosmic Ocean*). When the forces of light (*Devas*) and darkness (*Asuras*) churned the primordial ocean of chaos, they churned through the deadly, volatile poisons (*Halahala*) to extract the supreme divine treasures (*Ratnas*) and the ultimate prize: **Amrita** (अमृत) — the immortal nectar of eternal life, truth, and absolute clarity.
+
+### Why Was This Name Chosen for This Engine?
+
+In modern software engineering with autonomous AI agents, models operate inside a vast, turbulent, and noisy ocean of **ephemeral tokens, fleeting scratchpads, and probabilistic hallucinations**:
+
+1. **Churning the Ocean of Ephemeral Context:**  
+   During real-world development, AI agents generate tens of thousands of tokens of intermediate trial-and-error, debug outputs, and transient hypotheses. If left uncurated, this context degrades into token exhaustion, context drift, and silent hallucinations. **Manthan** acts as the cognitive churning rod — actively stirring through this raw stream, discarding the volatile noise, and distilling the essential truths of your codebase.
+
+2. **From Fleeting Noise to Immortal State (*Amrita*):**  
+   In Indian thought, *Amrita* is that which cannot die (*a-mrita* = deathless). When an agent commits an architectural decision or constitutional rule in Manthan, it is not lost when a context window closes or an LLM session restarts. It is forged into an **immutable, cryptographically signed Git commit** backed by sub-5ms BM25 retrieval — conferring permanence, reproducibility, and time-travel lineage upon the agent's memory.
+
+3. **Contemplative Cognition (*Manan*):**  
+   *Manthan* is intimately linked to the Sanskrit concept of ***Manan*** (मनन) — rigorous intellectual contemplation, inner reflection, and conscious discernment. Rather than treating memory as an opaque, black-box vector database that drifts unpredictably, Manthan treats memory as **version-controlled state ("Memory-as-Code")** that humans and agents can consciously audit, debate, and evolve.
+
+---
+
 ## 🏗️ Architecture & Multi-Scope Memory
 
 Manthan is completely self-contained and operates out-of-the-box in any repository via a declarative `.manthan.yaml` manifest:
