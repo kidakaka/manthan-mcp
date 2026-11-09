@@ -6,6 +6,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22.5%20%7C%2024%20LTS-brightgreen.svg)](https://nodejs.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.32.2-purple.svg)](https://modelcontextprotocol.io/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%99%A5-pink)](https://github.com/sponsors/kidakaka)
 
 Unlike probabilistic vector-only memory layers that suffer from black-box semantic drift and silent hallucinations, **Manthan** treats agent memory as **version-controlled state ("Memory-as-Code")**.
 
@@ -212,6 +213,12 @@ The test verifies:
 ## 🤝 Contributing
 
 We welcome contributions! Please read our **[Contributing Guide](CONTRIBUTING.md)** for details on our code of conduct, development setup, architecture guidelines, and pull request submission process.
+
+---
+
+## 💖 Sponsorship & Support
+
+If Manthan helps eliminate hallucination and state drift in your AI agents, consider supporting ongoing open-source maintenance via [GitHub Sponsors](https://github.com/sponsors/kidakaka).
 
 ---
 
