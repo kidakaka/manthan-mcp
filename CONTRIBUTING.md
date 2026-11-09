@@ -34,6 +34,7 @@ If you are using **Claude Code**, **Cursor**, **Windsurf**, **Google Antigravity
 If you want to get your hands dirty in the codebase, here is where we need engineering contributions:
 
 ### High-Impact Focus Areas:
+- **npm & NPX Distribution:** Zero-clone execution support via `npx @manthan/mcp-server` (see detailed checklist in [`TODO.md`](TODO.md)).
 - **MCP Client Config Presets & Extensions:** One-click configurations and sidecars for Claude Desktop, Cursor, Windsurf, OpenCode, and VS Code.
 - **Search & Ranking Tuning:** Refining BM25 tokenizers, snippet window extraction, and multi-namespace ranking algorithms in [`src/storage/sqlite-indexer.ts`](src/storage/sqlite-indexer.ts).
 - **Federated Multi-Repo Memory:** Supporting shared or submodule-mounted constitutional memory repositories across microservice fleets.

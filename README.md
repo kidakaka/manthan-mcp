@@ -223,7 +223,7 @@ The test verifies:
 - **If you are an agent developer or user:** Test Manthan in your repository and tell us what works, what breaks, and how your agent behaves with deterministic state handoffs.
 - **If you are a systems/TypeScript engineer:** Help us expand MCP client presets, optimize BM25 tokenizers, and build multi-repo memory federation.
 
-Please check out our **[Contributing Guide](CONTRIBUTING.md)** for our complete roadmap, discussion links, and local development instructions.
+Please check out our **[Contributing Guide](CONTRIBUTING.md)** and **[Project Roadmap & TODO](TODO.md)** for our complete publishing checklist, discussion links, and local development instructions.
 
 ---
 
