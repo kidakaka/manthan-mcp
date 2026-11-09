@@ -148,7 +148,7 @@ Or for local development:
   "mcpServers": {
     "manthan": {
       "command": "node",
-      "args": ["C:/code/manthan-mcp/dist/index.js", "serve"]
+      "args": ["<your-path>/manthan-mcp/dist/index.js", "serve"]
     }
   }
 }
