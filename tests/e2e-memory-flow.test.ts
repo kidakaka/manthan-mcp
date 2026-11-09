@@ -236,4 +236,45 @@ test('Manthan E2E Memory Flow: Standalone Init, Commit, Supersede, Recall & Prov
     assert.equal(countsAfter.working_superseded, 1);
     assert.equal(countsAfter.constitution_draft, 1);
   });
+
+  await t.test('8. Ingest OKF v0.2 document and fetch via tags and keywords', async () => {
+    // Write a document using native OKF v0.2 frontmatter
+    const okfFilePath = path.join(tempDir, '.manthan/memory/constitution/core/ADR-019-okf-upgrade.md');
+    fs.mkdirSync(path.dirname(okfFilePath), { recursive: true });
+    fs.writeFileSync(
+      okfFilePath,
+      `---
+type: ADR
+title: "ADR-019: Upgrade to Open Knowledge Format v0.2"
+description: "Upgrades memory engine to support OKF v0.2 generated actor convention"
+tags: [okf, architecture, knowledge-format]
+generated: { by: google/gemini, at: "2026-11-09T00:00:00Z" }
+status: accepted
+---
+
+## Context
+All memory documents should follow OKF v0.2 frontmatter specifications.
+`
+    );
+
+    const artifact = store.readMemory(okfFilePath);
+    assert.ok(artifact, 'OKF v0.2 document should be parsed');
+    assert.equal(artifact.frontmatter.title, 'ADR-019: Upgrade to Open Knowledge Format v0.2');
+    assert.equal(artifact.frontmatter.author_agent, 'google/gemini');
+    assert.equal(artifact.frontmatter.layer, 'constitution');
+    assert.equal(artifact.frontmatter.status, 'accepted');
+
+    indexer.indexMemory(artifact, 'sha_okf_test');
+
+    const searchResults = indexer.search({
+      query: 'knowledge format upgrade',
+      tags: ['okf'],
+      include_constitution: true,
+    });
+
+    assert.ok(searchResults.constitution_rules.length >= 1);
+    const matched = searchResults.constitution_rules.find((r) => r.id === 'ADR-019-okf-upgrade');
+    assert.ok(matched, 'Should find indexed OKF v0.2 document');
+    assert.equal(matched.author_agent, 'google/gemini');
+  });
 });

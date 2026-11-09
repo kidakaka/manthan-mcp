@@ -5,6 +5,7 @@ import {
   MemoryArtifact,
   MemoryFrontmatter,
   MemoryFrontmatterSchema,
+  normalizeMemoryFrontmatter,
   ResolvedManthanConfig,
 } from '../config/schema.js';
 
@@ -76,7 +77,7 @@ export class MarkdownStore {
     try {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = matter(raw);
-      const validatedFrontmatter = MemoryFrontmatterSchema.parse(parsed.data);
+      const validatedFrontmatter = normalizeMemoryFrontmatter(parsed.data || {}, filePath);
 
       return {
         frontmatter: validatedFrontmatter,

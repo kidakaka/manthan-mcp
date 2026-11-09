@@ -56,7 +56,16 @@ export interface ResolvedManthanConfig extends ManthanConfig {
 export const MemoryLayerEnum = z.enum(['working', 'constitution']);
 export type MemoryLayer = z.infer<typeof MemoryLayerEnum>;
 
-export const MemoryStatusEnum = z.enum(['active', 'superseded', 'draft', 'archived']);
+export const MemoryStatusEnum = z.enum([
+  'active',
+  'superseded',
+  'draft',
+  'archived',
+  'accepted',
+  'proposed',
+  'deprecated',
+  'wip',
+]);
 export type MemoryStatus = z.infer<typeof MemoryStatusEnum>;
 
 export const MemoryFrontmatterSchema = z.object({
@@ -69,10 +78,72 @@ export const MemoryFrontmatterSchema = z.object({
   trace_id: z.string().nullable().optional(),
   supersedes: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
-  updated_at: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)),
+  updated_at: z.string().min(1, 'Updated timestamp is required'),
 });
 
 export type MemoryFrontmatter = z.infer<typeof MemoryFrontmatterSchema>;
+
+/**
+ * Normalizes either standard Manthan frontmatter or Open Knowledge Format (OKF v0.2)
+ * frontmatter into a validated MemoryFrontmatter object.
+ */
+export function normalizeMemoryFrontmatter(
+  data: Record<string, any>,
+  filePath: string
+): MemoryFrontmatter {
+  const baseName = path.basename(filePath, '.md');
+  const id = data.id || baseName || generateMemoryId('mem');
+  const title = data.title || baseName;
+  const isConstitution =
+    filePath.includes('constitution') ||
+    data.layer === 'constitution' ||
+    data.type === 'ADR';
+  const layer = data.layer || (isConstitution ? 'constitution' : 'working');
+  const namespace =
+    data.namespace || data.type || (isConstitution ? 'architecture/adr' : 'general');
+  const status = data.status || 'active';
+
+  let author_agent = data.author_agent;
+  if (!author_agent) {
+    if (data.generated && typeof data.generated === 'object') {
+      author_agent = data.generated.by;
+    } else if (data.timestamp) {
+      author_agent = 'legacy-author';
+    } else {
+      author_agent = 'system';
+    }
+  }
+
+  let updated_at = data.updated_at;
+  if (!updated_at) {
+    if (data.generated && typeof data.generated === 'object') {
+      updated_at = data.generated.at;
+    } else if (data.timestamp) {
+      updated_at = data.timestamp;
+    } else {
+      updated_at = new Date().toISOString();
+    }
+  }
+
+  const tags = Array.isArray(data.tags)
+    ? data.tags.map(String)
+    : typeof data.tags === 'string'
+      ? data.tags.split(',').map((t: string) => t.trim())
+      : [];
+
+  return MemoryFrontmatterSchema.parse({
+    id: String(id),
+    title: String(title),
+    layer,
+    namespace: String(namespace),
+    status,
+    author_agent: String(author_agent),
+    trace_id: data.trace_id ?? null,
+    supersedes: data.supersedes ?? null,
+    tags,
+    updated_at: String(updated_at),
+  });
+}
 
 export interface MemoryArtifact {
   frontmatter: MemoryFrontmatter;

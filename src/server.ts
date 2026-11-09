@@ -9,6 +9,7 @@ import { registerCommitMemoryTool } from './tools/commit-memory.js';
 import { registerProposeRuleTool } from './tools/propose-rule.js';
 import { registerAuditLineageTool } from './tools/audit-lineage.js';
 import { registerSyncIndexTool } from './tools/sync-index.js';
+import { registerFetchByTagsAndKeywordsTool } from './tools/fetch-tags-keywords.js';
 
 export interface ManthanContext {
   server: McpServer;
@@ -41,6 +42,7 @@ export function createManthanServer(workspaceRoot: string = process.cwd()): Mant
   registerProposeRuleTool(server, config, store, git, indexer);
   registerAuditLineageTool(server, config, store, git);
   registerSyncIndexTool(server, config, store, git, indexer);
+  registerFetchByTagsAndKeywordsTool(server, indexer, store);
 
   return {
     server,
