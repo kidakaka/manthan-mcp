@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Prasad Ajinkya and Manthan Contributors
+
 import { z } from 'zod';
 import * as path from 'node:path';
 import * as fs from 'node:fs';

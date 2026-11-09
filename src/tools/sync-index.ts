@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Prasad Ajinkya and Manthan Contributors
+
 import { z } from 'zod';
 import { MarkdownStore } from '../storage/markdown-store.js';
 import { GitEngine } from '../storage/git-engine.js';

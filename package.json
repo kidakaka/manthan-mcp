@@ -29,7 +29,7 @@
     "memory-as-code",
     "deterministic-memory"
   ],
-  "author": "Manthan Systems",
+  "author": "Prasad Ajinkya and Manthan Contributors",
   "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Prasad Ajinkya and Manthan Contributors
+
 import { simpleGit, SimpleGit, LogResult, DefaultLogFields } from 'simple-git';
 import * as path from 'node:path';
 import * as fs from 'node:fs';

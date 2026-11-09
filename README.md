@@ -211,4 +211,7 @@ The test verifies:
 
 ## 📄 License
 
-Apache-2.0 © Manthan Systems
+Licensed under the [Apache License, Version 2.0](LICENSE) (the "License").  
+You may not use this software except in compliance with the License.
+
+Copyright © 2026 Prasad Ajinkya and Manthan Contributors.
