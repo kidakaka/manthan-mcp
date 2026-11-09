@@ -14,6 +14,12 @@ Unlike probabilistic vector-only memory layers that suffer from black-box semant
 - **Embedded SQLite FTS5 Sidecar Index:** Uses Node's built-in `node:sqlite` (`DatabaseSync` with BM25 ranking) for **sub-5ms** deterministic lexical retrieval with zero native C++ compilation dependencies on Windows, Linux, and macOS.
 - **Git Commit SHA Provenance:** Every memory recall operation returns cryptographic commit SHA provenance, providing reproducible time-travel and compliance auditing.
 
+> [!IMPORTANT]
+> ### 📢 Calling Early Adopters & Agent Builders!
+> **We need real-world user feedback more than code contributions right now.**  
+> If you are building with **Claude Code**, **Cursor**, **Windsurf**, or **Google Antigravity**, we want your feedback: Does deterministic Git-backed memory eliminate the state drift and hallucinations you experience with probabilistic vector stores?  
+> 👉 **[Read our Early Adopter & Contributor Guide](CONTRIBUTING.md#-our-1-priority-early-adopters--real-world-feedback)** | 💬 **[Join GitHub Discussions](https://github.com/kidakaka/manthan-mcp/discussions)**
+
 ---
 
 ## 🏗️ Architecture & Multi-Scope Memory
@@ -210,9 +216,14 @@ The test verifies:
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing & Early Feedback
 
-We welcome contributions! Please read our **[Contributing Guide](CONTRIBUTING.md)** for details on our code of conduct, development setup, architecture guidelines, and pull request submission process.
+**We value real-world feedback from early adopters above everything else.**
+
+- **If you are an agent developer or user:** Test Manthan in your repository and tell us what works, what breaks, and how your agent behaves with deterministic state handoffs.
+- **If you are a systems/TypeScript engineer:** Help us expand MCP client presets, optimize BM25 tokenizers, and build multi-repo memory federation.
+
+Please check out our **[Contributing Guide](CONTRIBUTING.md)** for our complete roadmap, discussion links, and local development instructions.
 
 ---
 

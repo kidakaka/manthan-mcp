@@ -1,10 +1,44 @@
 # 🤝 Contributing to Manthan (`@manthan/mcp-server`)
 
-Thank you for your interest in contributing to **Manthan**!
+Thank you for your interest in **Manthan**!
 
 Manthan is an open-source, commercial-grade, Git-native deterministic memory engine for AI agents exposed via the **Model Context Protocol (MCP)**. Unlike probabilistic vector-only layers that suffer from black-box drift, Manthan treats agent memory as **version-controlled state ("Memory-as-Code")**.
 
-We welcome contributions from developers, systems architects, and agentic AI researchers.
+---
+
+## 🌟 Our #1 Priority: Early Adopters & Real-World Feedback
+
+> **"Code is easy to write; real-world agent memory friction is hard to discover."**
+> 
+> While we warmly welcome code contributions, **our most critical need today is feedback from Early Adopters** who are pushing AI agents to their limits on real codebases.
+
+If you are using **Claude Code**, **Cursor**, **Windsurf**, **Google Antigravity**, or custom agent loops, you can shape the future of deterministic agent memory without writing a single line of TypeScript:
+
+### How You Can Help as an Early Adopter:
+1. **Plug Manthan into a Real Repository:**
+   Run `manthan init` in an active codebase. Let your AI agent read and write state during your daily coding sessions.
+2. **Battle-Test Deterministic Recall vs. Vector DBs:**
+   Does sub-5ms BM25 lexical search with Git SHA provenance solve the context drift and silent hallucinations you experienced with probabilistic vector stores (Mem0, Zep, Pinecone)?
+3. **Test State Supersession & Handoffs:**
+   Does your agent cleanly update and supersede older decisions using `supersedes_id`? Where does it struggle?
+4. **Evaluate Constitutional Guardrails:**
+   Try proposing project laws via `propose_constitution_rule`. How does the human-in-the-loop review workflow feel for your team?
+5. **Tell Us What Breaks or Feels Awkward:**
+   - Open a **[GitHub Issue](https://github.com/kidakaka/manthan-mcp/issues)** with reproduction steps, error logs, or OS edge cases.
+   - Start a **[GitHub Discussion](https://github.com/kidakaka/manthan-mcp/discussions)** to share your prompt patterns, namespace conventions, and workflow tips.
+
+---
+
+## 💻 For Developers & Systems Engineers
+
+If you want to get your hands dirty in the codebase, here is where we need engineering contributions:
+
+### High-Impact Focus Areas:
+- **MCP Client Config Presets & Extensions:** One-click configurations and sidecars for Claude Desktop, Cursor, Windsurf, OpenCode, and VS Code.
+- **Search & Ranking Tuning:** Refining BM25 tokenizers, snippet window extraction, and multi-namespace ranking algorithms in [`src/storage/sqlite-indexer.ts`](src/storage/sqlite-indexer.ts).
+- **Federated Multi-Repo Memory:** Supporting shared or submodule-mounted constitutional memory repositories across microservice fleets.
+- **Observability Bridges:** Telemetry exporters connecting agent mutations to OpenTelemetry, Langfuse, or Manthan session traces.
+- **Performance Benchmarks:** Stress-testing lexical search and Git indexing at 10,000+ memory documents.
 
 ---
 
