@@ -209,6 +209,12 @@ The test verifies:
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions! Please read our **[Contributing Guide](CONTRIBUTING.md)** for details on our code of conduct, development setup, architecture guidelines, and pull request submission process.
+
+---
+
 ## 📄 License
 
 Licensed under the [Apache License, Version 2.0](LICENSE) (the "License").  
