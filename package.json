@@ -1,0 +1,47 @@
+{
+  "name": "@manthan/mcp-server",
+  "version": "0.1.0",
+  "description": "Git-native, deterministic memory engine for AI agents exposed via Model Context Protocol (MCP)",
+  "type": "module",
+  "bin": {
+    "manthan": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    ".manthan.yaml.example",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "start": "node dist/index.js serve",
+    "manthan": "tsx src/index.ts",
+    "test": "node --import tsx --test tests/e2e-memory-flow.test.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "agent-memory",
+    "git",
+    "sqlite-fts5",
+    "memory-as-code",
+    "deterministic-memory"
+  ],
+  "author": "Manthan Systems",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "commander": "^13.1.0",
+    "gray-matter": "^4.0.3",
+    "simple-git": "^3.27.0",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
