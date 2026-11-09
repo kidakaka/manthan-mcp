@@ -76,7 +76,7 @@ export function generateMcpServerConfig(
   if (options.useNpx ?? true) {
     return {
       command: 'npx',
-      args: ['-y', '@manthan/mcp-server', 'serve', '--dir', resolvedDir],
+      args: ['-y', '@kidakaka/manthan-mcp', 'serve', '--dir', resolvedDir],
     };
   }
 

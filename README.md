@@ -1,4 +1,4 @@
-# 🏛️ Manthan (`@manthan/mcp-server`)
+# 🏛️ Manthan (`@kidakaka/manthan-mcp`)
 
 > **Commercial-Grade, Git-Native, Deterministic Memory Engine for AI Agents via Model Context Protocol (MCP)**
 
@@ -142,7 +142,7 @@ governance:
 
 ### 1. Initialize Manthan in your repository
 ```bash
-npx @manthan/mcp-server init
+npx @kidakaka/manthan-mcp init
 ```
 This automatically:
 - Creates `.manthan.yaml` with declarative settings.
@@ -157,14 +157,14 @@ This automatically:
 To automatically connect Claude Desktop without touching JSON files or hunting down OS appdata paths:
 
 ```bash
-npx @manthan/mcp-server link claude
+npx @kidakaka/manthan-mcp link claude
 ```
 
-*(You can also run `npx @manthan/mcp-server link all` to configure all detected LLM clients at once).*
+*(You can also run `npx @kidakaka/manthan-mcp link all` to configure all detected LLM clients at once).*
 
 ### 3. Inspect Status
 ```bash
-npx @manthan/mcp-server status
+npx @kidakaka/manthan-mcp status
 ```
 
 ---
@@ -181,7 +181,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "manthan": {
       "command": "npx",
-      "args": ["-y", "@manthan/mcp-server", "serve"]
+      "args": ["-y", "@kidakaka/manthan-mcp", "serve"]
     }
   }
 }
@@ -195,7 +195,7 @@ In `.cursor/mcp.json` *(already generated automatically by `manthan init`)*:
   "mcpServers": {
     "manthan": {
       "command": "npx",
-      "args": ["-y", "@manthan/mcp-server", "serve"]
+      "args": ["-y", "@kidakaka/manthan-mcp", "serve"]
     }
   }
 }
@@ -209,7 +209,7 @@ In `.vscode/mcp.json` *(already generated automatically by `manthan init`)*:
   "mcpServers": {
     "manthan": {
       "command": "npx",
-      "args": ["-y", "@manthan/mcp-server", "serve"]
+      "args": ["-y", "@kidakaka/manthan-mcp", "serve"]
     }
   }
 }
@@ -222,7 +222,7 @@ Add to your Antigravity MCP configuration (`~/.gemini/antigravity/mcp/manthan.js
 {
   "name": "manthan",
   "command": "npx",
-  "args": ["-y", "@manthan/mcp-server", "serve"]
+  "args": ["-y", "@kidakaka/manthan-mcp", "serve"]
 }
 ```
 

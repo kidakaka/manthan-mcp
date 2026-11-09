@@ -31,7 +31,7 @@ describe('Client Linker: Frictionless MCP Client Integration', () => {
     assert.strictEqual(config.command, 'npx');
     assert.deepStrictEqual(config.args, [
       '-y',
-      '@manthan/mcp-server',
+      '@kidakaka/manthan-mcp',
       'serve',
       '--dir',
       path.resolve(tempDir),

@@ -1,10 +1,10 @@
 {
-  "name": "@manthan/mcp-server",
+  "name": "@kidakaka/manthan-mcp",
   "version": "0.1.0",
   "description": "Git-native, deterministic memory engine for AI agents exposed via Model Context Protocol (MCP)",
   "type": "module",
   "bin": {
-    "manthan": "./dist/index.js"
+    "manthan": "dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -33,14 +33,18 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kidakaka/manthan-mcp.git"
+    "url": "git+https://github.com/kidakaka/manthan-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/kidakaka/manthan-mcp/issues"
   },
   "homepage": "https://github.com/kidakaka/manthan-mcp#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
