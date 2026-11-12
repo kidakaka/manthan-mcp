@@ -1,7 +1,9 @@
-# 🏛️ Manthan (`@kidakaka/manthan-mcp`)
+# 🏛️ Manthan ([`@kidakaka/manthan-mcp`](https://www.npmjs.com/package/@kidakaka/manthan-mcp))
 
 > **Commercial-Grade, Git-Native, Deterministic Memory Engine for AI Agents via Model Context Protocol (MCP)**
 
+[![npm version](https://img.shields.io/npm/v/@kidakaka/manthan-mcp.svg?color=cb3837&logo=npm)](https://www.npmjs.com/package/@kidakaka/manthan-mcp)
+[![npm downloads](https://img.shields.io/npm/dt/@kidakaka/manthan-mcp.svg?color=blue)](https://www.npmjs.com/package/@kidakaka/manthan-mcp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22.5%20%7C%2024%20LTS-brightgreen.svg)](https://nodejs.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.32.2-purple.svg)](https://modelcontextprotocol.io/)
