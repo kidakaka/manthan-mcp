@@ -3,3 +3,9 @@ dist/
 .manthan/index.db*
 *.log
 .DS_Store
+
+# MCP server and client configurations
+mcp_config.json
+.cursor/
+.vscode/
+
