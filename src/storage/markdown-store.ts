@@ -3,7 +3,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import matter from 'gray-matter';
+import * as yaml from 'yaml';
 import {
   MemoryArtifact,
   MemoryFrontmatter,
@@ -11,6 +11,25 @@ import {
   normalizeMemoryFrontmatter,
   ResolvedManthanConfig,
 } from '../config/schema.js';
+
+const FRONTMATTER_REGEX = /^---[^\S\r\n]*\r?\n([\s\S]*?)\r?\n---[^\S\r\n]*(?:\r?\n|$)([\s\S]*)$/;
+
+function parseFrontmatter(raw: string): { data: Record<string, any>; content: string } {
+  const clean = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+  const match = clean.match(FRONTMATTER_REGEX);
+  if (!match) {
+    return { data: {}, content: clean };
+  }
+  const yamlStr = match[1].trim();
+  const data = yamlStr ? (yaml.parse(yamlStr) || {}) : {};
+  return { data, content: match[2] };
+}
+
+function stringifyFrontmatter(content: string, data: Record<string, any>): string {
+  const yamlStr = yaml.stringify(data).trim();
+  const trimmed = content.trim();
+  return trimmed ? `---\n${yamlStr}\n---\n${trimmed}\n` : `---\n${yamlStr}\n---\n`;
+}
 
 export class MarkdownStore {
   private config: ResolvedManthanConfig;
@@ -59,7 +78,7 @@ export class MarkdownStore {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    const fileContent = matter.stringify(content.trim() + '\n', validatedFrontmatter);
+    const fileContent = stringifyFrontmatter(content, validatedFrontmatter);
     fs.writeFileSync(filePath, fileContent, 'utf-8');
 
     return {
@@ -79,7 +98,7 @@ export class MarkdownStore {
 
     try {
       const raw = fs.readFileSync(filePath, 'utf-8');
-      const parsed = matter(raw);
+      const parsed = parseFrontmatter(raw);
       const validatedFrontmatter = normalizeMemoryFrontmatter(parsed.data || {}, filePath);
 
       return {

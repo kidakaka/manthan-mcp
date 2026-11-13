@@ -109,7 +109,7 @@ manthan-mcp/
 │   │   └── schema.ts           # Zod validation for .manthan.yaml & Frontmatter (OKF v0.2)
 │   ├── storage/
 │   │   ├── git-engine.ts       # simple-git wrapper for atomic commits & audit lineage
-│   │   ├── markdown-store.ts   # File I/O + gray-matter parsing/serialization
+│   │   ├── markdown-store.ts   # File I/O + YAML frontmatter parsing/serialization
 │   │   └── sqlite-indexer.ts   # node:sqlite FTS5 BM25 search sidecar
 │   └── tools/
 │       ├── recall-memory.ts    # Recall active memory & constitution guardrails
