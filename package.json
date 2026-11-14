@@ -1,6 +1,6 @@
 {
   "name": "@kidakaka/manthan-mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Git-native, deterministic memory engine for AI agents exposed via Model Context Protocol (MCP)",
   "type": "module",
   "bin": {
