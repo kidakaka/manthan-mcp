@@ -237,13 +237,19 @@ export class SqliteIndexer {
     const params: any[] = [];
 
     if (ftsQuery) {
-      // Query with BM25 FTS ranking
+      const weights = this.config.retrieval?.bm25_weights;
+      const wTitle = typeof weights?.title === 'number' ? weights.title : 5.0;
+      const wNamespace = typeof weights?.namespace === 'number' ? weights.namespace : 2.0;
+      const wTags = typeof weights?.tags === 'number' ? weights.tags : 3.0;
+      const wContent = typeof weights?.content === 'number' ? weights.content : 1.0;
+
+      // Query with BM25 FTS ranking using column weights (0.0 for unindexed id, followed by title, namespace, tags, content)
       sql = `
         SELECT
           m.id, m.title, m.layer, m.namespace, m.status, m.author_agent,
           m.trace_id, m.supersedes, m.tags, m.updated_at, m.file_path,
           m.git_commit_sha, m.content,
-          bm25(memories_fts) as score
+          bm25(memories_fts, 0.0, ${wTitle}, ${wNamespace}, ${wTags}, ${wContent}) as score
         FROM memories_fts f
         JOIN memories m ON f.id = m.id
         WHERE memories_fts MATCH ?

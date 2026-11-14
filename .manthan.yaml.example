@@ -15,3 +15,10 @@ git:
 governance:
   prioritize_constitution_on_recall: true
   allow_direct_constitution_writes: false
+
+retrieval:
+  bm25_weights:
+    title: 5.0
+    tags: 3.0
+    namespace: 2.0
+    content: 1.0

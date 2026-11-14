@@ -76,7 +76,7 @@ ${thinLine}`);
       mcpServers: {
         manthan: {
           command: 'npx',
-          args: ['-y', '@manthan/mcp-server', 'serve', '--dir', workspaceRoot],
+          args: ['-y', '@kidakaka/manthan-mcp', 'serve', '--dir', workspaceRoot],
         },
       },
     },
@@ -86,7 +86,7 @@ ${thinLine}`);
 
   console.log(`
   To link Claude Desktop automatically, run:
-    npx @manthan/mcp-server link claude
+    npx @kidakaka/manthan-mcp link claude
     (or: manthan link claude)
 
   Or paste into your Claude Desktop config (${getClaudeDesktopConfigPath()}):

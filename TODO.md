@@ -1,62 +1,58 @@
 # 📋 Manthan Project TODO & Roadmap
 
-This document tracks upcoming releases, deployment checklists, and community development tasks for **Manthan** (`@manthan/mcp-server`).
+This document tracks upcoming releases, deployment checklists, and community development tasks for **Manthan** ([`@kidakaka/manthan-mcp`](https://www.npmjs.com/package/@kidakaka/manthan-mcp)).
 
 ---
 
-## 🚀 Immediate Priority: Publish to npm (`npx @manthan/mcp-server`)
+## ✅ Released: NPM Distribution (`@kidakaka/manthan-mcp`)
 
-The primary distribution goal is enabling zero-clone execution across all MCP clients:
-```bash
-npx @manthan/mcp-server init
-npx @manthan/mcp-server serve
-```
-
-### Publishing Checklist:
-- [ ] **NPM Account & Scope Setup:**
-  - Verify if the `@manthan` scope is available on [npmjs.com](https://www.npmjs.com).
-  - If `@manthan` is claimed/unavailable, designate primary public package identifier (e.g., `@kidakaka/manthan-mcp` or `manthan-mcp`).
-  - Configure `"publishConfig": { "access": "public" }` in `package.json`.
-- [ ] **Network & Registry Verification:**
-  - Ensure local or CI environment connects to the official registry (`https://registry.npmjs.org/`).
-  - Verify auth token (`npm whoami` / `NPM_TOKEN`).
-- [ ] **Package Contents & Bundling:**
-  - Verify files included in tarball (`npm pack --dry-run`):
-    - `dist/` (compiled TypeScript ESM modules).
-    - `.manthan.yaml.example`
-    - `README.md`, `LICENSE`, `CONTRIBUTING.md`.
-  - Confirm executable shebang (`#!/usr/bin/env node`) in `dist/index.js`.
-- [ ] **Automated GitHub Actions CI/CD (`.github/workflows/publish.yml`):**
-  - Trigger automated test + build on push to `main` and release tags (`v*`).
-  - Publish with npm provenance generation (`--provenance`).
-- [ ] **Smoke Test via NPX:**
-  - Test `npx @manthan/mcp-server init` in a fresh directory on Windows, macOS, and Linux.
-  - Verify `npx @manthan/mcp-server serve` communicates properly over stdio with Claude Desktop, Cursor, and Antigravity.
+- [x] **NPM Account & Scope Setup:**
+  - Designated primary public package identifier: [`@kidakaka/manthan-mcp`](https://www.npmjs.com/package/@kidakaka/manthan-mcp).
+  - Configured `"publishConfig": { "access": "public" }` in `package.json`.
+- [x] **Network & Registry Verification:**
+  - Connected to official npm registry with auth token.
+- [x] **Package Contents & Bundling:**
+  - Verified files included in tarball (`dist/`, `.manthan.yaml.example`, `README.md`, `LICENSE`, `CONTRIBUTING.md`).
+  - Executable shebang (`#!/usr/bin/env node`) verified in `dist/index.js`.
+- [x] **Automated GitHub Actions CI/CD (`.github/workflows/publish.yml`):**
+  - Automated test + build triggered on push and release tags.
+- [x] **Smoke Test via NPX:**
+  - Tested `npx @kidakaka/manthan-mcp init` and `serve` over stdio with Claude Desktop, Cursor, and Antigravity.
 
 ---
 
-## 🌟 Early Adopter & Community Roadmap
+## 🌟 Development Roadmap
 
-### Phase 1: Real-World Battle-Testing (Current)
+### Phase 1: Protocol Completeness & Retrieval Precision (In Progress)
 - [x] **Frictionless Onboarding & Client Auto-Link:**
-  - Auto-generate `.cursor/mcp.json` and `.vscode/mcp.json` during `manthan init` for zero-configuration project startup.
-  - Implement `manthan link [claude|cursor|vscode|all]` for 1-click configuration without touching JSON files.
-  - Display interactive onboarding card explaining that stdio MCP servers require no running terminal daemon.
-- [ ] **Collect Feedback on Memory Friction:**
-  - Monitor GitHub Discussions & Issues for edge cases in agent supersession and long-session state drift.
-  - Document prompt patterns that guide LLMs to write high-density, searchable frontmatter tags.
+  - Auto-generate `.cursor/mcp.json` and `.vscode/mcp.json` during `manthan init`.
+  - Implement `manthan link [claude|cursor|vscode|all]`.
+- [x] **Native MCP Resources Support (`manthan://...`):**
+  - Expose `manthan://constitution` for zero-turn architectural guardrail injection.
+  - Expose `manthan://active-context` for active working memories snapshot.
+  - Expose `manthan://status` for real-time engine metrics and sync status.
+- [x] **Configurable BM25 Column Weighting:**
+  - Native SQLite FTS5 `bm25(memories_fts, 0.0, w_title, w_namespace, w_tags, w_content)` scoring.
+  - Configurable weights via `retrieval.bm25_weights` in `.manthan.yaml` (default: title: 5.0, tags: 3.0, namespace: 2.0, content: 1.0).
 - [ ] **Multi-Platform OS Verification:**
-  - Test SQLite FTS5 file-locking behaviors across native Windows, WSL2, macOS (Apple Silicon), and Linux container environments.
+  - Continuous validation across native Windows, WSL2, macOS, and Linux containers.
 
-### Phase 2: Search & Retrieval Enhancements
-- [ ] **BM25 Tuning:**
-  - Implement configurable column weighting (boost `title` and `tags` over raw `body`).
-  - Add optional semantic / hybrid reranking plugins for workflows where lexical BM25 is paired with lightweight local embeddings.
+### Phase 2: Memory Governance & Staleness Lifecycle
 - [ ] **Time-Decay & Staleness Filters:**
   - Add query filters in `recall_memory` honoring `stale_after` frontmatter fields to deprioritize deprecated working memory.
+- [ ] **Hierarchical Namespace Matching:**
+  - Support namespace globs (e.g. `backend/*`).
+- [ ] **Pre-commit Secret & PII Scrubbing:**
+  - Automated regex scanner to prevent committing API keys and credentials into memory markdown.
 
-### Phase 3: Enterprise & Multi-Repo Federation
+### Phase 3: Git Branch Isolation & Multi-Agent Handoffs
+- [ ] **Session-Branching & Git Worktree Isolation:**
+  - Implement `branch_strategy: "session-branch"` to prevent memory commits from dirtying human working trees.
+- [ ] **Structured Session Handoff Artifacts & Prompts:**
+  - Pre-built MCP prompt templates (`manthan-handoff`, `manthan-constitution-review`).
+
+### Phase 4: Enterprise & Multi-Repo Federation
 - [ ] **Shared Constitutional Memory:**
   - Support mounting an external or git-submodule repository for organization-wide architectural constitutions.
 - [ ] **Observability Bridges:**
-  - Add native telemetry exporters for Langfuse, OpenTelemetry, and session replay tooling.
+  - Native telemetry exporters for Langfuse, OpenTelemetry, and session replay tooling.

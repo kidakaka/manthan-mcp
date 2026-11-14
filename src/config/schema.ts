@@ -28,18 +28,31 @@ export const GovernanceConfigSchema = z.object({
   allow_direct_constitution_writes: z.boolean().default(false),
 });
 
+export const RetrievalWeightsSchema = z.object({
+  title: z.number().default(5.0),
+  namespace: z.number().default(2.0),
+  tags: z.number().default(3.0),
+  content: z.number().default(1.0),
+});
+
+export const RetrievalConfigSchema = z.object({
+  bm25_weights: RetrievalWeightsSchema.default({}),
+});
+
 export const ManthanConfigSchema = z.object({
   version: z.string().default('1.0'),
   project: z.string().default('default-workspace'),
   storage: StorageConfigSchema.default({}),
   git: GitConfigSchema.default({}),
   governance: GovernanceConfigSchema.default({}),
+  retrieval: RetrievalConfigSchema.default({}),
 });
 
 export type ManthanConfig = z.infer<typeof ManthanConfigSchema>;
 export type StorageConfig = z.infer<typeof StorageConfigSchema>;
 export type GitConfig = z.infer<typeof GitConfigSchema>;
 export type GovernanceConfig = z.infer<typeof GovernanceConfigSchema>;
+export type RetrievalConfig = z.infer<typeof RetrievalConfigSchema>;
 
 export interface ResolvedManthanConfig extends ManthanConfig {
   workspace_root: string;

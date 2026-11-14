@@ -101,7 +101,7 @@ All payment mutation endpoints must accept and validate a unique `Idempotency-Ke
 
 ## 🛠️ MCP Tools Specification
 
-Manthan exposes 5 deterministic tools to any MCP-compliant client:
+Manthan exposes 6 deterministic tools to any MCP-compliant client:
 
 | Tool | Purpose | Key Inputs | Key Outputs |
 | :--- | :--- | :--- | :--- |
@@ -110,6 +110,19 @@ Manthan exposes 5 deterministic tools to any MCP-compliant client:
 | `propose_constitution_rule` | Propose architectural law or ADR for review | `title`, `content`, `namespace`, `rationale`, `author_agent`, `source_memory_id` | Draft artifact path and human review guidance |
 | `audit_memory_lineage` | Provenance audit and time-travel history | `memory_id` or `file_path`, `max_commits` | Chronological commit history, agent author, and diff summary |
 | `sync_memory_index` | Sidecar index maintenance & cache refresh | `force_rebuild` | Indexed counts, duration, and synchronized Git HEAD SHA |
+| `fetch_by_tags_and_keywords` | Tag-filtered BM25 retrieval with snippet extraction | `tags`, `tag_mode`, `keywords`, `doc_type`, `trust_tier`, `limit`, `snippets` | Compact excerpt list and OKF v0.2 matching documents |
+
+---
+
+## 📦 Native MCP Resources (`manthan://...`)
+
+Manthan exposes live MCP Resources that clients (Claude, Cursor, Antigravity) can read directly into their context window without burning a tool turn:
+
+| URI | Type | Purpose | Content |
+| :--- | :--- | :--- | :--- |
+| `manthan://constitution` | `text/markdown` | Zero-turn guardrail injection | Active architectural rules & ADRs |
+| `manthan://active-context` | `text/markdown` | Active working context snapshot | Active episodic memories & handoffs |
+| `manthan://status` | `application/json` | Telemetry & engine health | Memory counts, Git HEAD SHA & BM25 config |
 
 ---
 
@@ -133,6 +146,13 @@ git:
 governance:
   prioritize_constitution_on_recall: true
   allow_direct_constitution_writes: false
+
+retrieval:
+  bm25_weights:
+    title: 5.0      # Boost title matches 5x
+    tags: 3.0       # Boost tag matches 3x
+    namespace: 2.0  # Boost namespace matches 2x
+    content: 1.0    # Base content body weight
 ```
 
 ---

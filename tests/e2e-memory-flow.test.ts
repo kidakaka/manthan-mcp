@@ -277,4 +277,91 @@ All memory documents should follow OKF v0.2 frontmatter specifications.
     assert.ok(matched, 'Should find indexed OKF v0.2 document');
     assert.equal(matched.author_agent, 'google/gemini');
   });
+
+  await t.test('9. BM25 Column Weighting: Title match ranks higher than Content match', async () => {
+    // Artifact A has search term in Title
+    const titleMatchArtifact = store.writeMemory(
+      store.resolveMemoryPath('working', 'infra/k8s', 'mem_k8s_title_match'),
+      {
+        id: 'mem_k8s_title_match',
+        title: 'Kubernetes Pod Autoscaler Policy',
+        layer: 'working',
+        namespace: 'infra/k8s',
+        status: 'active',
+        author_agent: 'claude-code',
+        tags: ['infrastructure'],
+        updated_at: new Date().toISOString(),
+      },
+      'Details on autoscaling pods.'
+    );
+
+    // Artifact B has search term only deep in content body
+    const bodyMatchArtifact = store.writeMemory(
+      store.resolveMemoryPath('working', 'infra/logging', 'mem_k8s_body_match'),
+      {
+        id: 'mem_k8s_body_match',
+        title: 'Log Aggregation Architecture',
+        layer: 'working',
+        namespace: 'infra/logging',
+        status: 'active',
+        author_agent: 'claude-code',
+        tags: ['logging'],
+        updated_at: new Date().toISOString(),
+      },
+      'We stream logs from every Kubernetes Pod Autoscaler to Loki.'
+    );
+
+    indexer.indexMemory(titleMatchArtifact, 'sha_k8s_title');
+    indexer.indexMemory(bodyMatchArtifact, 'sha_k8s_body');
+
+    const searchResults = indexer.search({
+      query: 'Kubernetes Pod Autoscaler',
+      include_constitution: false,
+      limit: 10,
+    });
+
+    const results = searchResults.working_memories;
+    assert.ok(results.length >= 2, 'Should find both matching artifacts');
+
+    const titleIndex = results.findIndex((m) => m.id === 'mem_k8s_title_match');
+    const bodyIndex = results.findIndex((m) => m.id === 'mem_k8s_body_match');
+
+    assert.ok(titleIndex !== -1, 'Title match artifact must be in results');
+    assert.ok(bodyIndex !== -1, 'Body match artifact must be in results');
+    assert.ok(
+      titleIndex < bodyIndex,
+      `Title match (idx ${titleIndex}) must rank higher than body match (idx ${bodyIndex}) due to BM25 column weighting`
+    );
+  });
+
+  await t.test('10. Native MCP Resources: Read constitution, active-context, and status', async () => {
+    const { server } = createManthanServer(tempDir);
+    const registered = (server as any)._registeredResources;
+
+    assert.ok(registered['manthan://constitution'], 'manthan://constitution resource should be registered');
+    assert.ok(registered['manthan://active-context'], 'manthan://active-context resource should be registered');
+    assert.ok(registered['manthan://status'], 'manthan://status resource should be registered');
+
+    // 1. Read manthan://constitution
+    const constResult = await registered['manthan://constitution'].readCallback(new URL('manthan://constitution'));
+    assert.ok(constResult && constResult.contents && constResult.contents.length > 0);
+    assert.equal(constResult.contents[0].mimeType, 'text/markdown');
+    assert.match(constResult.contents[0].text, /Manthan Architectural Constitution/);
+
+    // 2. Read manthan://active-context
+    const contextResult = await registered['manthan://active-context'].readCallback(new URL('manthan://active-context'));
+    assert.ok(contextResult && contextResult.contents && contextResult.contents.length > 0);
+    assert.equal(contextResult.contents[0].mimeType, 'text/markdown');
+    assert.match(contextResult.contents[0].text, /Manthan Active Working Context/);
+
+    // 3. Read manthan://status
+    const statusResult = await registered['manthan://status'].readCallback(new URL('manthan://status'));
+    assert.ok(statusResult && statusResult.contents && statusResult.contents.length > 0);
+    assert.equal(statusResult.contents[0].mimeType, 'application/json');
+
+    const statusJson = JSON.parse(statusResult.contents[0].text);
+    assert.ok(statusJson.counts.total > 0, 'Status should report total memories count');
+    assert.ok(statusJson.retrieval.bm25_weights, 'Status should report BM25 weights');
+    assert.equal(statusJson.retrieval.bm25_weights.title, 5.0);
+  });
 });
