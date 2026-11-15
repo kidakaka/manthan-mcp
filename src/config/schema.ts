@@ -26,6 +26,9 @@ export const GitConfigSchema = z.object({
 export const GovernanceConfigSchema = z.object({
   prioritize_constitution_on_recall: z.boolean().default(true),
   allow_direct_constitution_writes: z.boolean().default(false),
+  allowed_tags: z.array(z.string()).optional(),
+  tag_policy: z.enum(['warn', 'strict']).default('warn'),
+  secret_scanning: z.boolean().default(true),
 });
 
 export const RetrievalWeightsSchema = z.object({
@@ -95,9 +98,25 @@ export const MemoryFrontmatterSchema = z.object({
   supersedes: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
   updated_at: z.string().min(1, 'Updated timestamp is required'),
+  stale_after: z.string().datetime().nullable().optional(),
+  valid_until: z.string().datetime().nullable().optional(),
+}).refine((data) => {
+  if (data.stale_after && data.valid_until) {
+    return new Date(data.stale_after) <= new Date(data.valid_until);
+  }
+  return true;
+}, {
+  message: 'stale_after must be earlier than or equal to valid_until',
+  path: ['stale_after'],
 });
 
 export type MemoryFrontmatter = z.infer<typeof MemoryFrontmatterSchema>;
+
+function parseSafeIso(val: any): string | null {
+  if (!val || typeof val !== 'string' || val.trim() === '') return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
 
 /**
  * Normalizes either standard Manthan frontmatter or Open Knowledge Format (OKF v0.2)
@@ -147,6 +166,9 @@ export function normalizeMemoryFrontmatter(
       ? data.tags.split(',').map((t: string) => t.trim())
       : [];
 
+  const stale_after = parseSafeIso(data.stale_after);
+  const valid_until = parseSafeIso(data.valid_until);
+
   return MemoryFrontmatterSchema.parse({
     id: String(id),
     title: String(title),
@@ -157,7 +179,9 @@ export function normalizeMemoryFrontmatter(
     trace_id: data.trace_id ?? null,
     supersedes: data.supersedes ?? null,
     tags,
-    updated_at: String(updated_at),
+    updated_at: parseSafeIso(updated_at) ?? String(updated_at),
+    stale_after,
+    valid_until,
   });
 }
 
