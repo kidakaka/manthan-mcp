@@ -62,22 +62,22 @@ This document tracks upcoming releases, deployment checklists, and community dev
 
 ---
 
-### ⏳ Phase 2: Memory Governance & Staleness Lifecycle (Target: v0.4.0)
+### ✅ Phase 2: Memory Governance & Staleness Lifecycle (Completed: v0.4.0)
 
-- [ ] **Time-Decay & Staleness Filters:**
+- [x] **Time-Decay & Staleness Filters:**
   - Add `stale_after` and `valid_until` ISO timestamps to `MemoryFrontmatterSchema`.
   - Add `include_stale: boolean` (default: `false`) in `recall_memory` and `fetch_by_tags_and_keywords`.
   - Automatically down-rank or exclude expired working memories while preserving constitutional rules.
-- [ ] **Hierarchical Namespace Matching & Globs:**
+- [x] **Hierarchical Namespace Matching & Globs:**
   - Support wildcard/glob namespace queries (e.g., `backend/*` matching `backend/payments`, `backend/auth`, `backend/db`).
   - Add namespace hierarchy navigation tool or resource (`manthan://namespaces`).
-- [ ] **Pre-commit Secret & PII Scrubbing:**
+- [x] **Pre-commit Secret & PII Scrubbing:**
   - Add pre-commit validation hook in `commit_memory` using regex patterns for API keys, bearer tokens, JWTs, private keys, and passwords.
   - Fail with actionable guidance if credentials or secrets are detected before writing to disk or Git.
-- [ ] **Controlled Tag Taxonomies:**
+- [x] **Controlled Tag Taxonomies:**
   - Support a declarative `governance.allowed_tags` list in `.manthan.yaml`.
   - Provide fuzzy tag completion and auto-tag suggestions during memory commits.
-- [ ] **Multi-Platform OS Verification:**
+- [x] **Multi-Platform OS Verification:**
   - Continuous matrix validation across native Windows, WSL2, macOS (Apple Silicon / Intel), and Linux containers.
 
 ---

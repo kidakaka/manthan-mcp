@@ -334,13 +334,14 @@ All memory documents should follow OKF v0.2 frontmatter specifications.
     );
   });
 
-  await t.test('10. Native MCP Resources: Read constitution, active-context, and status', async () => {
+  await t.test('10. Native MCP Resources: Read constitution, active-context, status, and namespaces', async () => {
     const { server } = createManthanServer(tempDir);
     const registered = (server as any)._registeredResources;
 
     assert.ok(registered['manthan://constitution'], 'manthan://constitution resource should be registered');
     assert.ok(registered['manthan://active-context'], 'manthan://active-context resource should be registered');
     assert.ok(registered['manthan://status'], 'manthan://status resource should be registered');
+    assert.ok(registered['manthan://namespaces'], 'manthan://namespaces resource should be registered');
 
     // 1. Read manthan://constitution
     const constResult = await registered['manthan://constitution'].readCallback(new URL('manthan://constitution'));
@@ -363,5 +364,14 @@ All memory documents should follow OKF v0.2 frontmatter specifications.
     assert.ok(statusJson.counts.total > 0, 'Status should report total memories count');
     assert.ok(statusJson.retrieval.bm25_weights, 'Status should report BM25 weights');
     assert.equal(statusJson.retrieval.bm25_weights.title, 5.0);
+
+    // 4. Read manthan://namespaces
+    const namespacesResult = await registered['manthan://namespaces'].readCallback(new URL('manthan://namespaces'));
+    assert.ok(namespacesResult && namespacesResult.contents && namespacesResult.contents.length > 0);
+    assert.equal(namespacesResult.contents[0].mimeType, 'application/json');
+
+    const namespacesJson = JSON.parse(namespacesResult.contents[0].text);
+    assert.equal(namespacesJson.name, 'root');
+    assert.ok(namespacesJson.total_count > 0, 'Namespaces root should report total count');
   });
 });
