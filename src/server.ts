@@ -37,7 +37,7 @@ export function createManthanServer(workspaceRoot: string = process.cwd()): Mant
 
   const server = new McpServer({
     name: '@kidakaka/manthan-mcp',
-    version: config.version || '0.1.1',
+    version: config.version || '0.3.1',
   });
 
   // Register deterministic MCP tools
