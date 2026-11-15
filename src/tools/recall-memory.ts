@@ -6,10 +6,11 @@ import { SqliteIndexer } from '../storage/sqlite-indexer.js';
 
 export const RecallMemoryInputSchema = {
   query: z.string().optional().describe('Search query string (natural language or keywords) to match against memory content, title, tags, and namespace'),
-  namespace: z.string().optional().describe('Optional namespace filter (e.g. "backend/payments")'),
+  namespace: z.string().optional().describe('Optional namespace filter supporting glob patterns (e.g. "backend/*", "backend/**")'),
   tags: z.array(z.string()).optional().describe('Optional tags filter to match memories with these tags'),
   include_constitution: z.boolean().default(true).describe('Whether to include high-priority constitutional guardrails (default: true)'),
   limit: z.number().int().min(1).max(50).default(5).describe('Maximum number of memories to return per category (default: 5)'),
+  include_stale: z.boolean().default(false).describe('Whether to include hard-expired or stale working memories (default: false)'),
 };
 
 export function registerRecallMemoryTool(server: any, indexer: SqliteIndexer) {
@@ -21,6 +22,7 @@ export function registerRecallMemoryTool(server: any, indexer: SqliteIndexer) {
         tags: args?.tags,
         include_constitution: args?.include_constitution ?? true,
         limit: args?.limit ?? 5,
+        include_stale: args?.include_stale ?? false,
       });
 
       return {
@@ -44,11 +46,14 @@ export function registerRecallMemoryTool(server: any, indexer: SqliteIndexer) {
     }
   };
 
+  const toolDescription =
+    'Lexical BM25 search across agent working memory and constitutional guardrails with Git commit SHA provenance and glob namespace filtering.';
+
   if (typeof server.registerTool === 'function') {
     server.registerTool(
       'recall_memory',
       {
-        description: 'Lexical BM25 search across agent working memory and constitutional guardrails with Git commit SHA provenance.',
+        description: toolDescription,
         inputSchema: RecallMemoryInputSchema,
       },
       handler
@@ -56,7 +61,7 @@ export function registerRecallMemoryTool(server: any, indexer: SqliteIndexer) {
   } else {
     server.tool(
       'recall_memory',
-      'Lexical BM25 search across agent working memory and constitutional guardrails with Git commit SHA provenance.',
+      toolDescription,
       RecallMemoryInputSchema,
       handler
     );

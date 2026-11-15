@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { MarkdownStore } from '../storage/markdown-store.js';
 import { GitEngine } from '../storage/git-engine.js';
 import { SqliteIndexer } from '../storage/sqlite-indexer.js';
+import { SecretScanner } from '../security/secret-scanner.js';
 import {
   generateMemoryId,
   MemoryFrontmatter,
@@ -19,6 +20,7 @@ export const ProposeConstitutionRuleInputSchema = {
   author_agent: z.string().min(1).describe('Name or identifier of the AI agent proposing the rule'),
   source_memory_id: z.string().optional().describe('Optional ID of an existing working memory being promoted to constitutional law'),
   create_branch: z.boolean().default(false).describe('Whether to create and isolate the proposal in a dedicated Git branch (e.g. manthan/rule-<id>)'),
+  allow_secrets: z.boolean().default(false).describe('Explicit bypass parameter allowing intentional credential patterns in test fixtures or mock examples'),
 };
 
 export function registerProposeRuleTool(
@@ -30,6 +32,18 @@ export function registerProposeRuleTool(
 ) {
   const handler = async (args: any) => {
     try {
+      // 1. Pre-commit secret scanning across title, content, and rationale
+      if (config.governance?.secret_scanning !== false) {
+        SecretScanner.assertNoSecrets(
+          {
+            title: args.title,
+            content: args.content,
+            rationale: args.rationale,
+          },
+          args.allow_secrets
+        );
+      }
+
       const id = generateMemoryId('rule');
       const now = new Date().toISOString();
 

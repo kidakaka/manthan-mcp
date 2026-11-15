@@ -9,9 +9,11 @@ export const FetchByTagsAndKeywordsInputSchema = {
   tags: z.array(z.string()).optional().describe('List of tags to filter by (e.g. ["bhn", "co-lending", "okf"])'),
   tag_mode: z.enum(['all', 'any']).default('all').describe('Tag conjunction mode: "all" (AND - must match all tags) or "any" (OR - matches any tag)'),
   keywords: z.string().optional().describe('Keyword search query for lexical BM25 relevance ranking across title, description, and content'),
+  namespace: z.string().optional().describe('Optional namespace filter supporting glob patterns (e.g. "backend/*", "backend/**")'),
   doc_type: z.string().optional().describe('Optional document type filter (e.g. "ADR", "Spec", "meeting-note", "Research")'),
   trust_tier: z.enum(['human-reviewed', 'machine-confirmed', 'unverified']).optional().describe('Optional OKF v0.2 trust tier filter'),
   limit: z.number().int().min(1).max(50).default(10).describe('Maximum number of matching documents to return (default: 10)'),
+  include_stale: z.boolean().default(false).describe('Whether to include hard-expired or stale working memories (default: false)'),
   snippets: z.boolean().default(true).describe('Whether to extract and include matching context excerpts from the content body'),
 };
 
@@ -58,9 +60,11 @@ export function registerFetchByTagsAndKeywordsTool(
       // Search using SQLite indexer
       const searchRes = indexer.search({
         query: keywords,
+        namespace: args?.namespace,
         tags: tags.length > 0 ? tags : undefined,
         include_constitution: true,
         limit: 50,
+        include_stale: args?.include_stale ?? false,
       });
 
       const allMatches = [...searchRes.constitution_rules, ...searchRes.working_memories];

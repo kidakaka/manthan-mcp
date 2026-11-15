@@ -71,6 +71,7 @@ export function registerManthanResources(
     const searchRes = indexer.search({
       include_constitution: false,
       exclude_superseded: true,
+      include_stale: false,
       limit: 25,
     });
 
@@ -90,6 +91,9 @@ export function registerManthanResources(
         }
         if (mem.tags && mem.tags.length > 0) {
           text += `- **Tags:** ${mem.tags.map((t) => `\`#${t}\``).join(' ')}\n`;
+        }
+        if (mem.is_stale) {
+          text += `\n> ⚠️ **Warning: This working memory has passed its soft-stale threshold (${mem.stale_after}) and may be obsolete.**\n`;
         }
         text += `\n${mem.content.trim()}\n\n---\n\n`;
       }
@@ -148,15 +152,37 @@ export function registerManthanResources(
     };
   };
 
+  // 4. Hierarchical Namespace Taxonomy Resource
+  const namespacesMetadata = {
+    title: 'Hierarchical Namespace Taxonomy',
+    description: 'Nested tree of all active, stale, and constitutional memory namespaces with count rollups',
+    mimeType: 'application/json',
+  };
+
+  const namespacesHandler = async (uri: URL) => {
+    const tree = indexer.getNamespaceHierarchy();
+    return {
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(tree, null, 2),
+        },
+      ],
+    };
+  };
+
   // Register resources using McpServer registerResource / resource API
   const s = server as any;
   if (typeof s.registerResource === 'function') {
     s.registerResource('constitution', 'manthan://constitution', constitutionMetadata, constitutionHandler);
     s.registerResource('active_context', 'manthan://active-context', activeContextMetadata, activeContextHandler);
     s.registerResource('status', 'manthan://status', statusMetadata, statusHandler);
+    s.registerResource('namespaces', 'manthan://namespaces', namespacesMetadata, namespacesHandler);
   } else if (typeof s.resource === 'function') {
     s.resource('constitution', 'manthan://constitution', constitutionMetadata, constitutionHandler);
     s.resource('active_context', 'manthan://active-context', activeContextMetadata, activeContextHandler);
     s.resource('status', 'manthan://status', statusMetadata, statusHandler);
+    s.resource('namespaces', 'manthan://namespaces', namespacesMetadata, namespacesHandler);
   }
 }
