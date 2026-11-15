@@ -4,9 +4,9 @@
 import { DatabaseSync } from 'node:sqlite';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { matchesGlob } from 'node:path/posix';
 import {
   MemoryArtifact,
-  MemoryFrontmatter,
   ResolvedManthanConfig,
 } from '../config/schema.js';
 
@@ -17,6 +17,7 @@ export interface SearchOptions {
   include_constitution?: boolean;
   limit?: number;
   exclude_superseded?: boolean;
+  include_stale?: boolean;
 }
 
 export interface MemorySearchResult {
@@ -30,6 +31,10 @@ export interface MemorySearchResult {
   supersedes: string | null;
   tags: string[];
   updated_at: string;
+  stale_after?: string | null;
+  valid_until?: string | null;
+  is_stale?: boolean;
+  is_expired?: boolean;
   file_path: string;
   git_commit_sha: string | null;
   content: string;
@@ -40,6 +45,17 @@ export interface RecallMemoryResponse {
   constitution_rules: MemorySearchResult[];
   working_memories: MemorySearchResult[];
   total_count: number;
+  stale_excluded_count: number;
+}
+
+export interface NamespaceNode {
+  name: string;
+  path: string;
+  active_count: number;
+  stale_count: number;
+  constitution_count: number;
+  total_count: number;
+  children: NamespaceNode[];
 }
 
 export class SqliteIndexer {
@@ -97,6 +113,8 @@ export class SqliteIndexer {
         supersedes TEXT,
         tags TEXT NOT NULL,
         updated_at TEXT NOT NULL,
+        stale_after TEXT,
+        valid_until TEXT,
         file_path TEXT NOT NULL,
         git_commit_sha TEXT,
         content TEXT NOT NULL
@@ -110,6 +128,28 @@ export class SqliteIndexer {
         content
       );
     `);
+
+    // Defensive table migration for existing v0.3.x databases
+    try {
+      const cols = db.prepare('PRAGMA table_info(memories)').all() as { name: string }[];
+      const colNames = new Set(cols.map((c) => c.name));
+      if (!colNames.has('stale_after')) {
+        try {
+          db.exec('ALTER TABLE memories ADD COLUMN stale_after TEXT;');
+        } catch {}
+      }
+      if (!colNames.has('valid_until')) {
+        try {
+          db.exec('ALTER TABLE memories ADD COLUMN valid_until TEXT;');
+        } catch {}
+      }
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_memories_lifecycle ON memories (layer, status, valid_until, stale_after);
+        CREATE INDEX IF NOT EXISTS idx_memories_namespace ON memories (namespace);
+      `);
+    } catch {
+      // Ignore migration errors if table doesn't exist yet
+    }
   }
 
   /**
@@ -168,8 +208,9 @@ export class SqliteIndexer {
     const stmt = db.prepare(`
       INSERT OR REPLACE INTO memories (
         id, title, layer, namespace, status, author_agent,
-        trace_id, supersedes, tags, updated_at, file_path, git_commit_sha, content
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        trace_id, supersedes, tags, updated_at, stale_after, valid_until,
+        file_path, git_commit_sha, content
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -183,6 +224,8 @@ export class SqliteIndexer {
       frontmatter.supersedes ?? null,
       tagsJson,
       frontmatter.updated_at,
+      frontmatter.stale_after ?? null,
+      frontmatter.valid_until ?? null,
       file_path,
       gitCommitSha ?? artifact.git_commit_sha ?? null,
       content
@@ -230,6 +273,8 @@ export class SqliteIndexer {
     const includeConstitution = options.include_constitution ?? true;
     const limit = options.limit ?? 5;
     const excludeSuperseded = options.exclude_superseded ?? true;
+    const includeStale = options.include_stale ?? false;
+    const nowIso = new Date().toISOString();
 
     const ftsQuery = query ? this.buildFtsQuery(query) : '';
 
@@ -247,8 +292,8 @@ export class SqliteIndexer {
       sql = `
         SELECT
           m.id, m.title, m.layer, m.namespace, m.status, m.author_agent,
-          m.trace_id, m.supersedes, m.tags, m.updated_at, m.file_path,
-          m.git_commit_sha, m.content,
+          m.trace_id, m.supersedes, m.tags, m.updated_at, m.stale_after, m.valid_until,
+          m.file_path, m.git_commit_sha, m.content,
           bm25(memories_fts, 0.0, ${wTitle}, ${wNamespace}, ${wTags}, ${wContent}) as score
         FROM memories_fts f
         JOIN memories m ON f.id = m.id
@@ -260,8 +305,8 @@ export class SqliteIndexer {
       sql = `
         SELECT
           m.id, m.title, m.layer, m.namespace, m.status, m.author_agent,
-          m.trace_id, m.supersedes, m.tags, m.updated_at, m.file_path,
-          m.git_commit_sha, m.content,
+          m.trace_id, m.supersedes, m.tags, m.updated_at, m.stale_after, m.valid_until,
+          m.file_path, m.git_commit_sha, m.content,
           0 as score
         FROM memories m
         WHERE 1=1
@@ -278,27 +323,52 @@ export class SqliteIndexer {
       sql += ` AND m.layer != 'constitution'`;
     }
 
-    // Filter by namespace
+    // Filter by namespace (supporting glob patterns and static prefix SQL pruning)
+    let isGlobNamespace = false;
     if (options.namespace) {
-      sql += ` AND (m.namespace = ? OR m.namespace LIKE ? || '/%')`;
-      params.push(options.namespace, options.namespace);
+      if (options.namespace.includes('*') || options.namespace.includes('?')) {
+        isGlobNamespace = true;
+        const wildcardIdx = options.namespace.search(/[*?]/);
+        const staticPrefix = wildcardIdx > 0
+          ? options.namespace.slice(0, wildcardIdx).replace(/\/+$/, '')
+          : '';
+        if (staticPrefix) {
+          sql += ` AND (m.namespace = ? OR m.namespace LIKE ? || '/%')`;
+          params.push(staticPrefix, staticPrefix);
+        }
+      } else {
+        sql += ` AND (m.namespace = ? OR m.namespace LIKE ? || '/%')`;
+        params.push(options.namespace, options.namespace);
+      }
     }
 
-    // Order clause: BM25 score ascending (more negative = more relevant in SQLite FTS5)
-    if (ftsQuery) {
-      sql += ` ORDER BY score ASC, m.updated_at DESC`;
-    } else {
-      sql += ` ORDER BY m.updated_at DESC`;
-    }
+    // Multi-tier sorting:
+    // Tier 1: non-soft-stale first (0), soft-stale last (1)
+    // Tier 2: BM25 score ascending (more negative = more relevant in SQLite FTS5)
+    // Tier 3: updated_at descending
+    sql += `
+      ORDER BY (
+        CASE WHEN (m.layer = 'working' AND m.stale_after IS NOT NULL AND m.stale_after <= ?) THEN 1 ELSE 0 END
+      ) ASC, score ASC, m.updated_at DESC
+    `;
+    params.push(nowIso);
 
     // Fetch candidate rows
     const rows = db.prepare(sql).all(...params) as any[];
 
-    // In-memory tags filtering if tags provided
+    // In-memory glob namespace filtering if namespace has wildcards
     let filteredRows = rows;
+    if (isGlobNamespace && options.namespace) {
+      const globPattern = options.namespace;
+      filteredRows = filteredRows.filter((r) =>
+        matchesGlob(r.namespace, globPattern)
+      );
+    }
+
+    // In-memory tags filtering if tags provided
     if (options.tags && options.tags.length > 0) {
       const searchTags = options.tags.map((t) => t.toLowerCase());
-      filteredRows = rows.filter((r) => {
+      filteredRows = filteredRows.filter((r) => {
         try {
           const itemTags: string[] = JSON.parse(r.tags || '[]');
           const itemTagsLower = itemTags.map((t) => t.toLowerCase());
@@ -309,8 +379,22 @@ export class SqliteIndexer {
       });
     }
 
-    // Convert rows to MemorySearchResult
-    const mapped: MemorySearchResult[] = filteredRows.map((r) => {
+    let staleExcludedCount = 0;
+    const mapped: MemorySearchResult[] = [];
+
+    for (const r of filteredRows) {
+      const isConstitutionRule = r.layer === 'constitution';
+      const isExpired = !isConstitutionRule && Boolean(r.valid_until && r.valid_until <= nowIso);
+      const isStale = !isConstitutionRule && (
+        Boolean(r.stale_after && r.stale_after <= nowIso) || isExpired
+      );
+
+      // Exclude hard-expired working memories unless includeStale is true
+      if (isExpired && !includeStale) {
+        staleExcludedCount++;
+        continue;
+      }
+
       let parsedTags: string[] = [];
       try {
         parsedTags = JSON.parse(r.tags);
@@ -318,7 +402,7 @@ export class SqliteIndexer {
         parsedTags = [];
       }
 
-      return {
+      mapped.push({
         id: r.id,
         title: r.title,
         layer: r.layer as 'working' | 'constitution',
@@ -329,12 +413,16 @@ export class SqliteIndexer {
         supersedes: r.supersedes,
         tags: parsedTags,
         updated_at: r.updated_at,
+        stale_after: r.stale_after ?? null,
+        valid_until: r.valid_until ?? null,
+        is_stale: isStale,
+        is_expired: isExpired,
         file_path: r.file_path,
         git_commit_sha: r.git_commit_sha,
         content: r.content,
         relevance_score: r.score !== undefined ? Number(r.score) : undefined,
-      };
-    });
+      });
+    }
 
     // Segregate into constitution_rules and working_memories
     const constitutionRules = mapped
@@ -349,7 +437,118 @@ export class SqliteIndexer {
       constitution_rules: constitutionRules,
       working_memories: workingMemories,
       total_count: constitutionRules.length + workingMemories.length,
+      stale_excluded_count: staleExcludedCount,
     };
+  }
+
+  /**
+   * Builds and returns a structured namespace hierarchy tree with cumulative count rollups.
+   */
+  getNamespaceHierarchy(): NamespaceNode {
+    const db = this.getDatabase();
+    const rows = db.prepare(`
+      SELECT namespace, layer, status, stale_after, valid_until
+      FROM memories
+    `).all() as Array<{
+      namespace: string;
+      layer: string;
+      status: string;
+      stale_after: string | null;
+      valid_until: string | null;
+    }>;
+
+    const nowIso = new Date().toISOString();
+
+    interface InternalNode {
+      name: string;
+      path: string;
+      active_count: number;
+      stale_count: number;
+      constitution_count: number;
+      total_count: number;
+      childrenMap: Map<string, InternalNode>;
+    }
+
+    const root: InternalNode = {
+      name: 'root',
+      path: '',
+      active_count: 0,
+      stale_count: 0,
+      constitution_count: 0,
+      total_count: 0,
+      childrenMap: new Map(),
+    };
+
+    for (const row of rows) {
+      const isConstitution = row.layer === 'constitution';
+      const isExpired = !isConstitution && Boolean(row.valid_until && row.valid_until <= nowIso);
+      const isStale = !isConstitution && (
+        Boolean(row.stale_after && row.stale_after <= nowIso) ||
+        isExpired ||
+        row.status === 'archived' ||
+        row.status === 'deprecated'
+      );
+      const isActive = !isConstitution && !isStale && row.status === 'active';
+
+      const segments = row.namespace.split('/').map((s) => s.trim()).filter(Boolean);
+      let curr = root;
+      let currPath = '';
+
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
+        currPath = currPath ? `${currPath}/${seg}` : seg;
+        if (!curr.childrenMap.has(seg)) {
+          curr.childrenMap.set(seg, {
+            name: seg,
+            path: currPath,
+            active_count: 0,
+            stale_count: 0,
+            constitution_count: 0,
+            total_count: 0,
+            childrenMap: new Map(),
+          });
+        }
+        curr = curr.childrenMap.get(seg)!;
+      }
+
+      // Increment leaf node counts
+      curr.total_count += 1;
+      if (isConstitution) {
+        curr.constitution_count += 1;
+      } else if (isStale) {
+        curr.stale_count += 1;
+      } else if (isActive) {
+        curr.active_count += 1;
+      }
+    }
+
+    // Convert InternalNode tree to NamespaceNode and recursively rollup counts
+    function rollup(node: InternalNode): NamespaceNode {
+      const children: NamespaceNode[] = [];
+      const sortedKeys = Array.from(node.childrenMap.keys()).sort();
+
+      for (const key of sortedKeys) {
+        const childInternal = node.childrenMap.get(key)!;
+        const childResult = rollup(childInternal);
+        children.push(childResult);
+        node.active_count += childResult.active_count;
+        node.stale_count += childResult.stale_count;
+        node.constitution_count += childResult.constitution_count;
+        node.total_count += childResult.total_count;
+      }
+
+      return {
+        name: node.name,
+        path: node.path,
+        active_count: node.active_count,
+        stale_count: node.stale_count,
+        constitution_count: node.constitution_count,
+        total_count: node.total_count,
+        children,
+      };
+    }
+
+    return rollup(root);
   }
 
   /**
