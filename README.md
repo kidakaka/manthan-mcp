@@ -1,4 +1,4 @@
-# 🏛️ Manthan ([`@kidakaka/manthan-mcp`](https://www.npmjs.com/package/@kidakaka/manthan-mcp))
+# 🏛️ Manthan Blueprint ([`@kidakaka/manthan-mcp`](https://www.npmjs.com/package/@kidakaka/manthan-mcp))
 
 > **Commercial-Grade, Git-Native, Deterministic Memory Engine for AI Agents via Model Context Protocol (MCP)**
 
@@ -24,6 +24,65 @@ Unlike probabilistic vector-only memory layers that suffer from black-box semant
 
 ---
 
+## System Overview
+
+Manthan is an open-source, deterministic, Git-native memory engine for AI coding agents exposed through the Model Context Protocol (MCP). It stores agent memories as structured Markdown artifacts with strict YAML frontmatter, archives historical state transitions via atomic Git commits, and provides sub-5ms BM25 lexical recall via an embedded SQLite FTS5 sidecar index (`node:sqlite`).
+
+```
+workspace/
+├── .manthan.yaml               # Declarative engine configuration
+└── .manthan/
+    ├── index.db                # Ephemeral SQLite FTS5 BM25 search sidecar (gitignored)
+    └── memory/
+        ├── working/            # Active mutable memory (Read/Write)
+        │   └── backend/
+        │       └── mem_01j9x8.md
+        └── constitution/       # Architectural guardrails & ADRs (Read-only)
+            └── core/
+                └── ADR-001.md
+```
+
+### Architectural Tiers:
+1. **Active Memory Store (`working` Layer):** Stores live project state, episodic session decisions, and task handoffs. Validated against a strict Zod schema with atomic Git commits.
+2. **Constitutional Memory (`constitution` Layer):** Stores non-negotiable architectural rules, ADRs, and project conventions inside `.manthan/memory/constitution/`. Proposed additions default to `status: draft` for human review.
+
+---
+
+## Subdirectories & System Boundaries
+
+- [Core Application & Server Runtime (`src`)](./src/README.md) - Wires configuration, storage sub-engines, MCP resources, and tools into a unified `ManthanContext`. Exposes Commander CLI and Stdio MCP runtime.
+  - [Configuration & Client Linker (`src/config`)](./src/config/README.md) - Zod schema validation for `.manthan.yaml`, frontmatter normalization, and automated client configuration injection for Claude Desktop, Cursor, and VS Code.
+  - [Resources Provider (`src/resources`)](./src/resources/README.md) - Direct MCP resource endpoints (`manthan://constitution`, `manthan://active-context`, `manthan://status`) for zero-turn context injection.
+  - [Storage Engine (`src/storage`)](./src/storage/README.md) - Dual-tier persistence through `GitEngine` (commits, lineage, branches), `MarkdownStore` (filesystem YAML/MD), and `SqliteIndexer` (embedded FTS5 BM25).
+  - [MCP Tools Implementation (`src/tools`)](./src/tools/README.md) - Handlers for `recall_memory`, `commit_memory`, `propose_constitution_rule`, `audit_memory_lineage`, `sync_memory_index`, and `fetch_by_tags_and_keywords`.
+
+---
+
+## Global Invariants
+
+- **Memory-as-Code Integrity:** All persistent memory artifacts must reside as `.md` files with valid YAML frontmatter matching `MemoryFrontmatterSchema`.
+- **Constitutional Immutability:** Memories under `layer: "constitution"` are read-only during standard agent task execution; new rules are submitted via `propose_constitution_rule` with `layer: 'constitution'` and `status: 'draft'`.
+- **Deterministic Lexical Retrieval:** Search queries execute against SQLite FTS5 BM25 index with fixed column weights (`title: 5.0, tags: 3.0, namespace: 2.0, content: 1.0`), preventing non-deterministic vector drift.
+- **StdIO Protocol Separation:** Standard output (`stdout`) is strictly reserved for JSON-RPC transport frames. All logging, diagnostic outputs, and notices must be written to standard error (`stderr`).
+- **Startup Index Resynchronization:** If the cached `git_head_sha` in the SQLite database does not match the active Git HEAD SHA during server startup, a full index rebuild from disk is automatically performed.
+
+---
+
+## Global Side Effects
+
+- **Local Filesystem:** Creates and modifies files in `.manthan/memory/working/` and `.manthan/memory/constitution/`. May generate or modify `.manthan.yaml` and `.gitignore`.
+- **Embedded Database:** Creates and manages `.manthan/index.db` SQLite database using WAL mode (`PRAGMA journal_mode = WAL`).
+- **Git Version Control:** Executes Git commands via `simple-git`: repository initialization, file staging, atomic commits with author metadata `"${author_agent} <agent@manthan.internal>"`, and branch creation (`manthan/rule-${id}`).
+- **Host Client Configuration:** Modifies client configuration files during `link` or `init` (Claude Desktop config in OS AppData/Config, `.cursor/mcp.json`, and `.vscode/mcp.json`).
+
+---
+
+## System Verification
+
+- Run: `npm test`
+
+---
+
 ## 🌊 The Origin & Etymology of "Manthan" (मंथन)
 
 > *"Out of the turbulent ocean of chaotic noise, deep contemplation churns the immortal nectar of truth."*
@@ -44,34 +103,6 @@ In modern software engineering with autonomous AI agents, models operate inside 
 
 3. **Contemplative Cognition (*Manan*):**  
    *Manthan* is intimately linked to the Sanskrit concept of ***Manan*** (मनन) — rigorous intellectual contemplation, inner reflection, and conscious discernment. Rather than treating memory as an opaque, black-box vector database that drifts unpredictably, Manthan treats memory as **version-controlled state ("Memory-as-Code")** that humans and agents can consciously audit, debate, and evolve.
-
----
-
-## 🏗️ Architecture & Multi-Scope Memory
-
-Manthan is completely self-contained and operates out-of-the-box in any repository via a declarative `.manthan.yaml` manifest:
-
-```
-workspace/
-├── .manthan.yaml               # Declarative engine configuration
-└── .manthan/
-    ├── index.db                # Ephemeral SQLite FTS5 BM25 search sidecar (gitignored)
-    └── memory/
-        ├── working/            # Active mutable memory (Read/Write)
-        │   └── backend/
-        │       └── mem_01j9x8.md
-        └── constitution/       # Architectural guardrails & ADRs (Read-only)
-            └── core/
-                └── ADR-001.md
-```
-
-### 1. Active Memory Store (`working` Layer — Default)
-- Stores live project state, episodic session decisions, task handoffs, and evolving specifications as structured Markdown files with strict YAML frontmatter.
-- **Access Policy:** Read/Write via MCP tools. Every mutation validates against a strict Zod schema and generates an atomic Git commit with metadata (`author_agent`, `trace_id`, `supersedes`).
-
-### 2. Constitutional Memory (`constitution` Layer — Guardrail Tier)
-- Stores non-negotiable architectural rules, ADRs, and project conventions inside `.manthan/memory/constitution/`.
-- **Access Policy:** Read-only during standard agent task execution so models cannot accidentally overwrite or drift core project laws. Always prioritized in `recall_memory` responses. Agents propose additions using `propose_constitution_rule` (staged as `draft` for human review).
 
 ---
 
